@@ -4,26 +4,73 @@ layout: game
 ---
 <script src="../js/three.js"></script>
 <script>
-    // Our Javascript will go here.
+    // init basic setup
+    treejs = new THREE.WebGLRenderer();
+    treejs.shadowMap.enabled = true;
+    treejs.shadowMap.type = THREE.PCFSoftShadowMap;
+    treejs.setPixelRatio(window.devicePixelRatio);
+    treejs.setSize(window.innerWidth, window.innerHeight);
+    document.body.appendChild(treejs.domElement);
+
+    window.addEventListener('resize', () => {
+        this._OnWindowResize();
+    }, false);
+    
+    // init camera
+    const fov = 60;
+    const aspect = 1920/1080;
+    const near = 1.0;
+    const far = 1000.0;
+    const camera = new THREE.PerspectiveCamera( fov, aspect, near, far );
+    camera.position.set(1, 0, 5);
+
+    // scene setup
     const scene = new THREE.Scene();
-    const camera = new THREE.PerspectiveCamera( 75, window.innerWidth / window.innerHeight, 0.1, 1000 );
-
-    const renderer = new THREE.WebGLRenderer();
-    renderer.setSize( window.innerWidth, window.innerHeight );
-    document.body.appendChild( renderer.domElement );
-
     const geometry = new THREE.BoxGeometry();
     const material = new THREE.MeshBasicMaterial( { color: 0xBBff42 } );
     const cube = new THREE.Mesh( geometry, material );
     scene.add( cube );
 
-    camera.position.z = 5;
+    let light = new THREE.DirectionalLight(0xFFFFFF);
+    light.position.set(100,100,100);
+    light.target.position.set(0,0,0);
+    light.castShadow = true;
+    light.shadow.bias = 0.01;
+    light.shadow.mapSize.width = 2048;
+    light.shadow.mapSize.height = 2048;
+    light.shadow.camera.near = 1.0;
+    light.shadow.camera.far = 500;
+    light.shadow.camera.left = 200;
+    light.shadow.camera.right = -200;
+    light.shadow.camera.top = 200;
+    light.shadow.camera.bottom = -200;
+    scene.add(light);
+
+    light = new THREE.AmbientLight(0x404040);
+    scene.add(light);
+
+    // load skybox
+    const path = "../res/skybox/";
+    const format = '.jpg';
+    const urls = [
+        path + 'posx' + format, path + 'negx' + format,
+        path + 'posy' + format, path + 'negy' + format,
+        path + 'posz' + format, path + 'negz' + format
+    ];
+    const textureCube = new THREE.CubeTextureLoader().load(urls);
+    scene.background = textureCube;
 
     function animate() {
         requestAnimationFrame( animate );
         cube.rotation.x += 0.01;
         cube.rotation.y += 0.01;
-        renderer.render( scene, camera );        
+        treejs.render( scene, camera );        
+    }
+
+    function _OnWindowResize() {
+        camera.aspect = window.innerWidth/window.innerHeight;
+        camera.updateProjectionMatrix();
+        treejs.setSize(window.innerWidth, window.innerHeight);
     }
     animate();
 </script>
